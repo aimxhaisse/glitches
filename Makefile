@@ -1,4 +1,4 @@
-NUMBER		:= 4096
+NUMBER		:= 65536
 COMPILER 	:= gcc
 SOURCES		:= glitcher.c cuda_glitcher.c mem_glitcher.c
 OUTPUT		:= output
