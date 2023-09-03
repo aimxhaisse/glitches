@@ -1,6 +1,6 @@
 NUMBER		:= 4096
 COMPILER 	:= gcc
-SOURCE		:= glitches.cc
+SOURCES		:= glitcher.c cuda_glitcher.c mem_glitcher.c
 OUTPUT		:= output
 BIN		:= glitches
 
@@ -13,7 +13,7 @@ help:	## Display this help message
 
 .PHONY: build
 build:  ## Build the Glitches explorer
-	$(COMPILER) $(SOURCE) -o $(BIN) -ljpeg -lcuda
+	$(COMPILER) $(SOURCES) -o $(BIN) -ljpeg -lcuda -I.
 
 .PHONY: output
 output:
@@ -22,7 +22,7 @@ output:
 .PHONY: glitch output
 glitch: build ## Creates glitches
 	rm -rf $(OUTPUT)/*
-	./$(BIN) $(OUTPUT) $(NUMBER)
+	sudo ./$(BIN) $(OUTPUT) $(NUMBER)
 
 .PHONY: clean
 clean: 	## Cleans the last glitches build

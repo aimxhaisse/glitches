@@ -1,3 +1,3 @@
 # Glitches
 
-Experiments with video card memory epxlorations.
+Experiments with visual memory epxlorations.
