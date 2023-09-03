@@ -1,9 +1,11 @@
+NUMBER		:= 4096
 COMPILER 	:= nvcc
 SOURCE		:= glitches.cu
-OUTPUT		:= glitches
+OUTPUT		:= output
+BIN		:= glitches
 
 
-all: re
+all: help
 
 .PHONY: help
 help:	## Display this help message
@@ -11,7 +13,16 @@ help:	## Display this help message
 
 .PHONY: build
 build:  ## Build the Glitches explorer
-	$(COMPILER) $(SOURCE) -o $(OUTPUT)
+	$(COMPILER) $(SOURCE) -o $(BIN) -ljpeg
+
+.PHONY: output
+output:
+	mkdir -p $@
+
+.PHONY: glitch output
+glitch: build ## Creates glitches
+	rm -rf $(OUTPUT)/*
+	./$(BIN) $(OUTPUT) $(NUMBER)
 
 .PHONY: clean
 clean: 	## Cleans the last glitches build
