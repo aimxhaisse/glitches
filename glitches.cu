@@ -107,7 +107,7 @@ int buffer_to_jpeg(void *buffer, size_t buffer_size, char *output) {
     lines[0] = (JSAMPROW) ((char *) buffer + i * GLITCH_WIDTH);
     (void) jpeg_write_scanlines(&cinfo, lines, 1);
     for (int j = 0; j < GLITCH_WIDTH; j++) {
-      sum += lines[0][j];
+      sum += *((char *) buffer + i * GLITCH_WIDTH + j);
     }
   }
 
