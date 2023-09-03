@@ -1,8 +1,16 @@
+/*
+  We don't use the Cuda runtime API but instead rely on the Kernel
+  API.  This is to be as low-level as possible and have the ability to
+  get dirty memory.
+*/
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#include <cuda.h>
 #include <jpeglib.h>
 
 /* Output file of the glitch */
@@ -13,8 +21,10 @@
 
 /* Main structure for the glitcher */
 typedef struct glitcher_s {
-  void *	dev_buffer;		/* memory to allocate on the GFX card to seek */
+  CUdeviceptr 	dev_buffer;		/* memory to allocate on the GFX card to seek */
   size_t	dev_buffer_size;	/* size of the memory buffer */
+  CUdevice	cu_device;		/* CUDA device */
+  CUcontext	cu_context;		/* CUDA context */
 } glitcher_t;
 
 /* Creates a new Glitcher */
@@ -23,13 +33,26 @@ glitcher_t *new_glitcher() {
   size_t	available_m, total_m;
   glitcher_t *	glitcher;
 
+  /* Cuda init */
+  cuInit(0);
+
+  int device_count = 0;
+  cuDeviceGetCount(&device_count);
+  if (device_count == 0) {
+    fprintf(stderr, "cuDeviceGetCount: no device supporting cuda.\n");
+    return NULL;
+  }
+  
   glitcher = (glitcher_t *) malloc(sizeof(glitcher_t));
   if (glitcher == NULL) {
     fprintf(stderr, "malloc: unable to allocate memory for new glitcher\n");
     return NULL;
   }
 
-  err = cudaMemGetInfo(&available_m, &total_m);
+  cuDeviceGet(&glitcher->cu_device, 0);
+  cuCtxCreate(&glitcher->cu_context, 0, glitcher->cu_device);
+
+  err = cuMemGetInfo(&available_m, &total_m);
   if (err != 0) {
     fprintf(stderr, "cudaMemGetInfo: unable to get memory info (%d)\n", err);
     free(glitcher);
@@ -55,9 +78,9 @@ glitcher_t *new_glitcher() {
     return NULL;
   }
 
-  err = cudaMalloc(&glitcher->dev_buffer, glitcher->dev_buffer_size);
+  err = cuMemAlloc(&glitcher->dev_buffer, glitcher->dev_buffer_size);
   if (err != 0) {
-    fprintf(stderr, "cudaMalloc: unable to allocate device memory (%d)\n", err);
+    fprintf(stderr, "cuMemAlloc: unable to allocate device memory (%d)\n", err);
     free(glitcher);
     return NULL;
   }
@@ -69,9 +92,9 @@ glitcher_t *new_glitcher() {
 void free_glitcher(glitcher_t *glitcher) {
   int err;
 
-  err = cudaFree(glitcher->dev_buffer);
+  err = cuMemFree(glitcher->dev_buffer);
   if (err != 0) {
-    fprintf(stderr, "cudaFree: unable to free device memory (%d)\n", err);
+    fprintf(stderr, "cuMemFree: unable to free device memory (%d)\n", err);
   }
 }
 
@@ -134,9 +157,9 @@ int glitch(glitcher_t *glitcher, char *output) {
     return -1;
   }
 
-  err = cudaMemcpy(buffer, (void *) (((char *) glitcher->dev_buffer) + peek_at), GLITCH_AREA, cudaMemcpyDeviceToHost);
+  err = cuMemcpyDtoH(buffer, glitcher->dev_buffer + peek_at, GLITCH_AREA);
   if (err != 0) {
-    fprintf(stderr, "cudaMemcpy: unable to copy memory from device to host (%d)\n", err);
+    fprintf(stderr, "cyMemcpy: unable to copy memory from device to host (%d)\n", err);
     return -1;
   }
 
@@ -170,7 +193,7 @@ int main(int ac, char **av) {
     fprintf(stderr, "number should be in [0, %d] (%d)\n", MAX_GENERATIONS, number);
     return -1;
   }
-
+  
   glitcher = new_glitcher();
   if (glitcher == NULL) {
     fprintf(stderr, "unable to create glitcher\n");

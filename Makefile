@@ -1,6 +1,6 @@
 NUMBER		:= 4096
-COMPILER 	:= nvcc
-SOURCE		:= glitches.cu
+COMPILER 	:= gcc
+SOURCE		:= glitches.cc
 OUTPUT		:= output
 BIN		:= glitches
 
@@ -13,7 +13,7 @@ help:	## Display this help message
 
 .PHONY: build
 build:  ## Build the Glitches explorer
-	$(COMPILER) $(SOURCE) -o $(BIN) -ljpeg
+	$(COMPILER) $(SOURCE) -o $(BIN) -ljpeg -lcuda
 
 .PHONY: output
 output:
