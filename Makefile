@@ -3,7 +3,7 @@ SOURCE		:= glitches.cu
 OUTPUT		:= glitches
 
 
-all: help
+all: re
 
 .PHONY: help
 help:	## Display this help message
